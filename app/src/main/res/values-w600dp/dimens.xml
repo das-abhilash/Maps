@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="distance">40dp</dimen>
+    <dimen name="distance_hz">30dp</dimen>
+    <dimen name="distance_vl">90dp</dimen>
+    <dimen name="fab_margin_side">50dp</dimen>
+</resources>
