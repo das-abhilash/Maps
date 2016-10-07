@@ -25,10 +25,15 @@
             </intent-filter>
         </activity>
 
+        <meta-data android:name="com.google.android.gms.version"
+                   android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key"/>
-
+        <provider
+            android:name=".data.generated.LocationProvider"
+            android:authorities="in.zollet.abhilash.maps"
+            android:exported="false"/>
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
