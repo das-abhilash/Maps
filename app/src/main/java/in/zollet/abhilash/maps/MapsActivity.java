@@ -428,8 +428,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                             .width(10).color(Color.GRAY).geodesic(true);
                                     String points = locate.getRoutes().get(0).getOverviewPolyline().getPoints();
                                     List<LatLng> list = decodePoly(points);
-
-
                                     polyline = mMap.addPolyline(polylineOptions);
                                     polyline.setPoints(list);
                                     break;
