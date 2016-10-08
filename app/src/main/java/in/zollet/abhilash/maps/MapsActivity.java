@@ -432,19 +432,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                                     polyline = mMap.addPolyline(polylineOptions);
                                     polyline.setPoints(list);
-/*
-                                    for (int i = 0; i < points.size() - 1; i++) {
-                                        LatLng src = points.get(i);
-                                        LatLng dest = points.get(i + 1);
-
-                                        // mMap is the Map Object
-                                        Polyline line = mMap.addPolyline(
-                                                new PolylineOptions().add(
-                                                        new LatLng(src.latitude, src.longitude),
-                                                        new LatLng(dest.latitude,dest.longitude)
-                                                ).width(2).color(Color.BLUE).geodesic(true)
-                                        );
-                                    }*/
                                     break;
                                 case "ZERO_RESULTS":
                                     Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
