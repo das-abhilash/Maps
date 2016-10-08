@@ -433,11 +433,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     break;
                                 case "ZERO_RESULTS":
                                     Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
-
                                     break;
                                 default:
                                     Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
-
                                     break;
                             }
                         } else {
