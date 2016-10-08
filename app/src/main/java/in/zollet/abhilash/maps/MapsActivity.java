@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.OperationApplicationException;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -20,12 +21,15 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -52,8 +56,16 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import in.zollet.abhilash.maps.API.LocationAPI;
+import in.zollet.abhilash.maps.API.LocationData;
 import in.zollet.abhilash.maps.data.LocationColumns;
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import static java.security.AccessController.getContext;
 
@@ -296,12 +308,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 startLocationUpdates();
-                PolylineOptions polylineOptions = new PolylineOptions()
-                        .add(new LatLng(getLocation().getLatitude(),getLocation().getLongitude()))
-                .add(new LatLng(marker.getPosition().latitude,marker.getPosition().longitude)).
-                                width(5).color(Color.GRAY).geodesic(true);
+                AddedLocation destination = new AddedLocation(marker.getPosition().latitude,marker.getPosition().longitude);
+                Location location = getLocation();
+                AddedLocation origin = new AddedLocation(location.getLatitude(),location.getLongitude());
+                showRoute(origin,destination);
 
-                polyline = mMap.addPolyline(polylineOptions);
             }
         });
 
@@ -344,6 +355,120 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         current.setTitle("This is your Location");
         current.setIcon((BitmapDescriptorFactory.fromResource(R.drawable.ic_directions_run_black_24dp)));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(16));
     }
+
+    private List<LatLng> decodePoly(String encoded) {
+
+        List<LatLng> poly = new ArrayList<LatLng>();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng((((double) lat / 1E5)),
+                    (((double) lng / 1E5)));
+            poly.add(p);
+        }
+
+        return poly;
+    }
+
+    public void showRoute(final AddedLocation origin, final AddedLocation destination)
+    {
+
+         {
+
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            OkHttpClient client = builder.build();
+            Retrofit restAdapter = new Retrofit.Builder()
+                    .baseUrl("https://maps.googleapis.com/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(client)
+                    .build();
+            LocationAPI locationAPI = restAdapter.create(LocationAPI.class);
+            Call<LocationData> call = locationAPI.getLocation(origin.getLat()+","+origin.getLon(),
+                    destination.getLat()+","+destination.getLon(), "AIzaSyB2taazCHzkDHIVLH96KGR9eq1yxbvYfDc");
+
+            {
+
+                call.enqueue(new retrofit2.Callback<LocationData>() {
+
+                    int ds = 0;
+
+                    @Override
+                    public void onResponse(Call<LocationData> call, Response<LocationData> response) {
+
+                        if (response.body() != null) {
+                            LocationData locate = response.body();
+
+                            switch (locate.getStatus()) {
+                                case "OK":
+                                    PolylineOptions polylineOptions = new PolylineOptions()
+                                            .add(new LatLng(origin.getLat(),origin.getLon()))
+                                            .add(new LatLng(destination.getLat(),destination.getLon()))
+                                            .width(10).color(Color.GRAY).geodesic(true);
+                                    String points = locate.getRoutes().get(0).getOverviewPolyline().getPoints();
+                                    List<LatLng> list = decodePoly(points);
+
+
+                                    polyline = mMap.addPolyline(polylineOptions);
+                                    polyline.setPoints(list);
+/*
+                                    for (int i = 0; i < points.size() - 1; i++) {
+                                        LatLng src = points.get(i);
+                                        LatLng dest = points.get(i + 1);
+
+                                        // mMap is the Map Object
+                                        Polyline line = mMap.addPolyline(
+                                                new PolylineOptions().add(
+                                                        new LatLng(src.latitude, src.longitude),
+                                                        new LatLng(dest.latitude,dest.longitude)
+                                                ).width(2).color(Color.BLUE).geodesic(true)
+                                        );
+                                    }*/
+                                    break;
+                                case "ZERO_RESULTS":
+                                    Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
+
+                                    break;
+                                default:
+                                    Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
+
+                                    break;
+                            }
+                        } else {
+                            Toast.makeText(MapsActivity.this, "OOPS! Something went wrong", Toast.LENGTH_SHORT).show();
+
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<LocationData> call, Throwable t) {
+                        Toast.makeText(MapsActivity.this, "OOPS! No internet connection", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            }
+        }
+    }
+
 }

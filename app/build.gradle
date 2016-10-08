@@ -32,4 +32,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'net.simonvt.schematic:schematic:0.6.3'
     apt 'net.simonvt.schematic:schematic-compiler:0.6.3'
+    compile 'com.squareup.retrofit2:retrofit:2.0.2'
+    compile 'com.squareup.retrofit2:converter-gson:2.0.2'
 }

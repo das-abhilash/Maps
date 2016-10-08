@@ -18,6 +18,11 @@ public class AddedLocation implements Parcelable {
         this.lon = lon;
 
     }
+    public AddedLocation(Double lat,Double lon){
+        this.lat = lat;
+        this.lon = lon;
+
+    }
 
     protected AddedLocation(Parcel in) {
         name = in.readString();
